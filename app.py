@@ -1,4 +1,15 @@
-
+#
+# REST API for Yolo V3 image object detection using MYRIAD (MOVIDIUS) NCS2 for hardware acceleration
+# Using Intel's OpenVINO Inference Engine
+#
+# Inspired by Intel's  OpenVINO Yolo demo app but heavily modified
+# 
+# - Flask as REST server
+# - On boot, load network to MYRIAD device then listen for requests
+# - On request, parse job, parse image, infer, parse output, return job result json style
+#
+# See https://github.com/philipsoeberg/yolo-v3-ncs2-docker for docs
+# 
 
 import os
 import json
@@ -18,7 +29,6 @@ import math
 import collections
 
 def setup_logging():
-    #log.basicConfig(format="[ %(asctime)s %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
     log = logging.getLogger(__name__)
     handler = logging.StreamHandler()
     formatter = logging.Formatter('[ %(asctime)s %(levelname)s ] %(message)s')
@@ -30,6 +40,7 @@ log = setup_logging()
 
 os.chdir(sys.path[0])
 
+# From Intel's OpenVINO Yolo demo app
 class YoloParams:
     # ------------------------------------------- Extracting layer parameters ------------------------------------------
     # Magic numbers are copied from yolo samples
@@ -58,13 +69,14 @@ class YoloParams:
         params_to_print = {'classes': self.classes, 'num': self.num, 'coords': self.coords, 'anchors': self.anchors}
         [log.info("         {:8}: {}".format(param_name, param)) for param_name, param in params_to_print.items()]
 
+# From Intel's OpenVINO Yolo demo app
 def entry_index(side, coord, classes, location, entry):
     side_power_2 = side ** 2
     n = location // side_power_2
     loc = location % side_power_2
     return int(side_power_2 * (n * (coord + classes + 1) + entry) + loc)
 
-
+# From Intel's OpenVINO Yolo demo app
 def scale_bbox(x, y, h, w, class_id, confidence, h_scale, w_scale):
     xmin = int((x - w / 2) * w_scale)
     ymin = int((y - h / 2) * h_scale)
@@ -72,7 +84,7 @@ def scale_bbox(x, y, h, w, class_id, confidence, h_scale, w_scale):
     ymax = int(ymin + h * h_scale)
     return dict(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, class_id=class_id, confidence=confidence)
 
-
+# From Intel's OpenVINO Yolo demo app
 def parse_yolo_region(blob, resized_image_shape, original_im_shape, params, threshold):
     # ------------------------------------------ Validating output parameters ------------------------------------------
     _, _, out_blob_h, out_blob_w = blob.shape
@@ -120,7 +132,7 @@ def parse_yolo_region(blob, resized_image_shape, original_im_shape, params, thre
                                           h_scale=orig_im_h, w_scale=orig_im_w))
     return objects
 
-
+# From Intel's OpenVINO Yolo demo app
 def intersection_over_union(box_1, box_2):
     width_of_overlap_area = min(box_1['xmax'], box_2['xmax']) - max(box_1['xmin'], box_2['xmin'])
     height_of_overlap_area = min(box_1['ymax'], box_2['ymax']) - max(box_1['ymin'], box_2['ymin'])
@@ -444,8 +456,8 @@ def app_post():
         match_class = list(match_classes.items())[class_id]
         match_class_name = match_class[0]
         match_class_threshold = match_class[1]['threshold']
-        match_class_colorbox = match_class[1]['colorbox'][::-1] # RBG -> BGR
-        match_class_colortext = match_class[1]['colortext'][::-1] # RBG -> BGR
+        match_class_colorbox = match_class[1]['colorbox'][::-1] # RGB -> BGR
+        match_class_colortext = match_class[1]['colortext'][::-1] # RGB -> BGR
         rectbox = [
             max(obj['xmin'], 0),
             max(obj['ymin'], 0),
