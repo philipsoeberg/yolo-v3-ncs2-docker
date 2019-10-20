@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>OpenVINO YoloV3 Darknet Object Detectiono</title>
+  <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+</head>
+
+<body>
+
+<fieldset>
+    <legend>OpenVINO YoloV3 Darknet Object Detection</legend>
+
+    <div>
+        <label for="pic">Picture:</label>
+        <input type="file"
+               id="pic" name="pic"
+               accept="image/jpeg" />
+        <input id="clickMe" type="button" value="Upload & Process" onclick="doupload();" />
+    </div>
+    <pre>API in: { return_original_image: false, return_marked_image: true, image: base64-of-a-jpeg-image }</pre>
+</fieldset>
+
+<!-- the result of the search will be rendered inside this div -->
+<div>
+<pre id="result"></pre>
+<img id="mark_image" />
+</div>
+
+<script>
+function doupload() {
+  var file = $('#pic')[0].files[0];
+  var reader = new FileReader();
+
+  reader.onload = function(event) {
+    var img = event.target.result.replace("data:"+ file.type +";base64,", '');
+
+    $.ajax({
+      type: 'post',
+      data: JSON.stringify({
+        "return_original_image": true,
+        "return_marked_image": true,
+        "image": img}),
+      dataType: "json",
+      contentType: "application/json",
+      success: function(data) {
+        $("#mark_image").attr('src', 'data:image/png;base64,'+data.mark_image);
+        $("#result").text(JSON.stringify(data, function(key,value) {
+          if(key=="mark_image") return "...";
+          if(key=="org_image") return "...";
+          return value;
+        }));
+      }
+    });
+  }
+
+  // read data from file
+  reader.readAsDataURL(file);
+}
+</script>
+
+  </body>
+</html>
+
