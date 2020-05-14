@@ -38,9 +38,14 @@ You cannot make changes to container in UI. It will violate the /dev:/dev mappin
    "return_known_classes": false,      # optional. Return an array of [class_name, class_name, ...] for all known classes with position = class_id. (is required if image is None)
    "predict_threshold": 0.6,           # optional. Prediction threshold (global). Is also lower-bound. Cannot be less than 0.1.
    "intersection_threshold": 0.4,      # optional. Intersection threshold.
-   "debug": 0                          # optional. Increase console output. 0: disable, 1:enable, 2:full output (don't ... long strings to console)
-   "colorbox": [255,0,255]             # optional. Global RGB value to draw box.
-   "colortext": [0,0,0]                # optional. Global RGB value to draw text.
+   "debug": 0,                         # optional. Increase console output. 0: disable, 1:enable, 2:full output (don't ... long strings to console)
+   "colorbox": [255,0,255],            # optional. Global RGB value to draw box.
+   "colortext": [0,0,0],               # optional. Global RGB value to draw text.
+   "ignore_box": [                     # optional. Rect to blackout before inference.
+     [xmin, ymin, xmax, ymax],         #           box1 xmin (left), ymin (top), xmax (right), ymax (bottom) pixels to blackout in input image before inference
+     [...],                            #           box2..
+   ],
+   "ignore_box_return": true          # optional. Set to true to return infered image including a marked area for ignored boxes.
  }
 
 

@@ -269,9 +269,14 @@ def app_post():
     #   "return_known_classes": false,      # optional. Return an array of [class_name, class_name, ...] for all known classes with position = class_id. (is required if image is None)
     #   "predict_threshold": 0.6,           # optional. Prediction threshold (global). Is also lower-bound. Cannot be less than 0.1.
     #   "intersection_threshold": 0.4,      # optional. Intersection threshold.
-    #   "debug": 0                          # optional. Increase console output. 0: disable, 1:enable, 2:full output (don't ... long strings to console)
-    #   "colorbox": [255,0,255]             # optional. Global RGB value to draw box.
-    #   "colortext": [0,0,0]                # optional. Global RGB value to draw text.
+    #   "debug": 0,                         # optional. Increase console output. 0: disable, 1:enable, 2:full output (don't ... long strings to console)
+    #   "colorbox": [255,0,255],            # optional. Global RGB value to draw box.
+    #   "colortext": [0,0,0],               # optional. Global RGB value to draw text.
+    #   "ignore_box": [                     # optional. Rect to blackout before inference.
+    #     [xmin, ymin, xmax, ymax],         #           box1 xmin (left), ymin (top), xmax (right), ymax (bottom) pixels to blackout in input image before inference
+    #     [...],                            #           box2..
+    #   ],
+    #   "ignore_box_return": true          # optional. Set to true to return infered image including a marked area for ignored boxes.
     # }
     #
 
@@ -320,7 +325,9 @@ def app_post():
             'intersection_threshold': 0.4 if 'intersection_threshold' not in data else float(data['intersection_threshold']),
             'debug': 0 if 'debug' not in data else int(data['debug']),
             'colorbox': [255,0,255] if 'colorbox' not in data else data['colorbox'],
-            'colortext': [0,0,0] if 'colortext' not in data else data['colortext']
+            'colortext': [0,0,0] if 'colortext' not in data else data['colortext'],
+            'ignore_box' : [] if 'ignore_box' not in data else data['ignore_box'],
+            'ignore_box_return' : True if 'ignore_box_return' not in data else data['ignore_box_return']
         }
         job_res = {}
     except Exception as e:
@@ -407,7 +414,10 @@ def app_post():
         bin_image = base64.b64decode(job['image'], validate=True)
         bin_image = np.asarray(bytearray(bin_image), dtype="uint8")
         image = cv2.imdecode(bin_image, cv2.IMREAD_COLOR)
-        in_image = cv2.resize(image, (myriad['w'], myriad['h']))
+        image_with_blackouts = image.copy()
+        for blackout in job['ignore_box']:
+            cv2.rectangle(image_with_blackouts, (blackout[0],blackout[1]), (blackout[2], blackout[3]), (0,0,0), -1)
+        in_image = cv2.resize(image_with_blackouts, (myriad['w'], myriad['h']))
         in_image = in_image.transpose((2,0,1)) # change data layout from HWC to CHW
         in_image = in_image.reshape((myriad['n'], myriad['c'], myriad['h'], myriad['w']))
     except Exception as e:
@@ -447,6 +457,14 @@ def app_post():
 
     if len(objects):
         log.info(" Class ID | Confidence | Req.Conf | LEFT | TOP | RIGHT | BOTTOM | COLOR ")
+
+    # Add ignore_box ROI if any (simply remove B channel from ignore box)
+    if job['return_marked_image']:
+        if job['ignore_box_return']:
+            for blackout in job['ignore_box']:
+                roi = image[blackout[0]:blackout[1], blackout[2]:blackout[3], :]
+                roi[:,:,0] = 0
+                image[blackout[0]:blackout[1], blackout[2]:blackout[3], :] = roi
 
     # loop over each object and pass for output and drawing
     origin_im_size = image.shape[:-1]
