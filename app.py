@@ -169,18 +169,23 @@ def boot_myriad():
     ie = IECore()
     log.info("IR Engine info:")
     log.info("  Available IR Devices:     {}".format(ie.available_devices))
-    devices = ie.get_metric(metric_name='AVAILABLE_DEVICES', device_name='MYRIAD')
-    if (len(devices)>1):
-        ir_device = "MULTI:"
-        for device in devices:
-            ir_device += "MYRIAD."+device+","
-        ir_device=ir_device[:-1]
+    if 'MYRIAD' in ie.available_devices:
+        verinfo = ie.get_versions('MYRIAD')['MYRIAD']
+        log.info("  Myriad Plugin version:    {}.{}".format(verinfo.major, verinfo.minor))
+        log.info("  Myriad Build:             {}".format(verinfo.build_number))
+        devices = ie.get_metric(metric_name='AVAILABLE_DEVICES', device_name='MYRIAD')
+        if (len(devices)>1):
+            ir_device = "MULTI:"
+            for device in devices:
+                ir_device += "MYRIAD."+device+","
+            ir_device=ir_device[:-1]
+        else:
+            ir_device = "MYRIAD"
     else:
-        ir_device = "MYRIAD"
+        ir_device = "CPU"
+        log.warn("!! MYRIAD DEVICE NOT FOUND. USING CPU !!")
+
     log.info("  Selected Device(s):       {}".format(ir_device))
-    verinfo = ie.get_versions('MYRIAD')['MYRIAD']
-    log.info("  Myriad Plugin version:    {}.{}".format(verinfo.major, verinfo.minor))
-    log.info("  Myriad Build:             {}".format(verinfo.build_number))
 
     log.info("Loading network files XML [{}] and BIN [{}]".format(model_xml, model_bin))
     net = IENetwork(model=model_xml, weights=model_bin)
@@ -458,13 +463,14 @@ def app_post():
     if len(objects):
         log.info(" Class ID | Confidence | Req.Conf | LEFT | TOP | RIGHT | BOTTOM | COLOR ")
 
-    # Add ignore_box ROI if any (simply remove B channel from ignore box)
+    # Add ignore_box if any (simply remove B channel from ignore box and draw black rect around it)
     if job['return_marked_image']:
         if job['ignore_box_return']:
             for blackout in job['ignore_box']:
-                roi = image[blackout[0]:blackout[1], blackout[2]:blackout[3], :]
+                cv2.rectangle(image, (blackout[0],blackout[1]), (blackout[2], blackout[3]), (0,0,0), 1)
+                roi = image[blackout[1]:blackout[3], blackout[0]:blackout[2], :]
                 roi[:,:,0] = 0
-                image[blackout[0]:blackout[1], blackout[2]:blackout[3], :] = roi
+                image[blackout[1]:blackout[3], blackout[0]:blackout[2], :] = roi
 
     # loop over each object and pass for output and drawing
     origin_im_size = image.shape[:-1]

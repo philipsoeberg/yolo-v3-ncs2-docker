@@ -79,7 +79,7 @@ run set -x \
   && mv yolov3.bin app/ \
   && mv yolov3.xml app/ \
   && mv coco.names app/ \
-  && /opt/intel/openvino/deployment_tools/tools/deployment_manager/deployment_manager.py  --targets vpu --user_data app --output_dir . --archive_name app \
+  && /opt/intel/openvino/deployment_tools/tools/deployment_manager/deployment_manager.py  --targets vpu cpu --user_data app --output_dir . --archive_name app \
   && mkdir -p /opt/deploy \
   && tar -C /opt/deploy -xzvf app.tar.gz \
   && cp -r /opt/intel/openvino/python /opt/deploy/openvino/ \
