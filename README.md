@@ -12,7 +12,7 @@ Intel NCS2: https://software.intel.com/en-us/neural-compute-stick
 
 YOLOv3 MYRIAD OpenVINO Docker Container
 Run `docker run --privileged --volume=/dev:/dev -p 5000:5000 philipsoeberg/yolo-v3-ncs2`
-Connect to http://<ip>:5000
+Connect to http://localhost:5000
 
 
 In QNAP you must create the container from the shell. UI won't work as --volume=/dev:/dev is important! (QNAP v4.3.6.0993 (04-07-2019) on a TS-853A)
