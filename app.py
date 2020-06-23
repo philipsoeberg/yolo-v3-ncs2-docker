@@ -292,8 +292,8 @@ def app_post():
     #     "mark_image": "",                 # A marked image with class matches. In base64/jpeg format 
     #     "predict_time": 0.5,              # Number of seconds as a float used to predict image
     #     "known_classes": [..]             # String array of known classes, returned if return_known_classes is set true. Position is equal class_id.
-    #     "match": {                        # OrderedDict of class_name:class match objects. Sorted after highest confidence
-    #         "person": {
+    #     "match": [                        # OrderedDict of class_name:class match objects. Sorted after highest confidence
+    #         {
     #             "class_id": 0,            # class_id of match
     #             "class_name": "person",   # class_name of match
     #             "confidence": 0.8,        # confidence of match
@@ -304,7 +304,7 @@ def app_post():
     #             "bottom": 0               # ymax (bottom) rect of match-box
     #         },
     #         ...
-    #     },
+    #     ],
     #     "predict_threshold": 0.6,         # Prediction threshold used
     #     "intersection_threshold": 0.4     # intersection threshold used
     # }

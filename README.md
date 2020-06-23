@@ -4,18 +4,26 @@ REST API of Yolo V3 using OpenVINO VPU (MYRIAD NCS2) for HW accelerated object r
 This project launch a full REST service for running YoloV3 image object recognition on a Intel® Neural Compute Stick 2
 It is fully Dockerized, so just launch and use.
 
-https://software.intel.com/en-us/neural-compute-stick
+Yolo v3: https://pjreddie.com/darknet/yolo/
+
+Intel NCS2: https://software.intel.com/en-us/neural-compute-stick
+
+<img src="https://software.intel.com/sites/default/files/managed/13/ca/NCS2-specs.png" width="375px">
 
 YOLOv3 MYRIAD OpenVINO Docker Container
-Run 'docker run --privileged --volume=/dev:/dev <imagename>
+Run `docker run --privileged --volume=/dev:/dev -p 5000:5000 philipsoeberg/yolo-v3-ncs2`
 Connect to http://<ip>:5000
 
 
 In QNAP you must create the container from the shell. UI won't work as --volume=/dev:/dev is important! (QNAP v4.3.6.0993 (04-07-2019) on a TS-853A)
-docker create --privileged --volume=/dev:/dev --name yolo_rest_openvino --restart=always -p 5000:5000 restserver
-Then in QNAP UI, start new container -> settings -> autostart=true -> untick "restart on save" -> save.
-You cannot make changes to container in UI. It will violate the /dev:/dev mapping which is required by OpenVINO.
 
+`docker create --privileged --volume=/dev:/dev --restart=always -p 5000:5000 philipsoeberg/yolo-v3-ncs2`
+
+Then in QNAP UI, start new container -> settings -> autostart=true -> untick "restart on save" -> save.
+
+:exclamation: You cannot make changes to container in UI. It will violate the /dev:/dev mapping which is required by OpenVINO.
+
+This project is auto-built on Dockerhub: https://hub.docker.com/repository/docker/philipsoeberg/yolo-v3-ncs2
 
 ```
  Input JSON:
@@ -52,12 +60,12 @@ You cannot make changes to container in UI. It will violate the /dev:/dev mappin
  Output JSON:
  {
      "org_image": "",                  # original input image. Useful where this machine is part of a flow
-     "image_id": <anytype>             # original 'image_id'. Useful for parallel flow-type programming 
-     "mark_image": "",                 # A marked image with class matches. In base64/jpeg format 
+     "image_id": <anytype>             # original 'image_id'. Useful for parallel flow-type programming
+     "mark_image": "",                 # A marked image with class matches. In base64/jpeg format
      "predict_time": 0.5,              # Number of seconds as a float used to predict image
      "known_classes": [..]             # String array of known classes, returned if return_known_classes is set true. Position is equal class_id.
-     "match": {                        # OrderedDict of class_name:class match objects. Sorted after highest confidence
-         "person": {
+     "match": [                        # OrderedDict of class_name:class match objects. Sorted after highest confidence
+         {
              "class_id": 0,            # class_id of match
              "class_name": "person",   # class_name of match
              "confidence": 0.8,        # confidence of match
@@ -68,7 +76,7 @@ You cannot make changes to container in UI. It will violate the /dev:/dev mappin
              "bottom": 0               # ymax (bottom) rect of match-box
          },
          ...
-     },
+     ],
      "predict_threshold": 0.6,         # Prediction threshold used
      "intersection_threshold": 0.4     # intersection threshold used
  }
